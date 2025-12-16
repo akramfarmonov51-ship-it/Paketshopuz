@@ -2,14 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 
 // Admin credentials
-const ADMIN_CREDENTIALS = {
-  username: 'Akramjon',
-  password: 'Hisobot201415!'
-};
+const ADMIN_PASSWORD = 'Hisobot201415!';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => boolean;
+  register: (name: string, phone: string) => void;
+  loginAdmin: (password: string) => boolean;
   logout: () => void;
   isAdmin: boolean;
   currentAddress: string;
@@ -31,31 +29,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Telegram WebApp Integration
     if (window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        tg.setHeaderColor('#f97316');
-        tg.setBackgroundColor('#f8fafc');
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('#f97316');
+      tg.setBackgroundColor('#f8fafc');
 
-        const tgUser = tg.initDataUnsafe?.user;
-        if (tgUser) {
-            const newUser: User = { 
-                phone: `TG-${tgUser.id}`, 
-                name: `${tgUser.first_name} ${tgUser.last_name || ''}`.trim(),
-                telegramId: tgUser.id
-            };
-            setUser(newUser);
-            localStorage.setItem('paketshop_user', JSON.stringify(newUser));
-        }
+      const tgUser = tg.initDataUnsafe?.user;
+      if (tgUser) {
+        const newUser: User = {
+          phone: `TG-${tgUser.id}`,
+          name: `${tgUser.first_name} ${tgUser.last_name || ''}`.trim(),
+          telegramId: tgUser.id
+        };
+        setUser(newUser);
+        localStorage.setItem('paketshop_user', JSON.stringify(newUser));
+      }
     }
   }, []);
 
-  const login = (username: string, password: string): boolean => {
-    // Check admin credentials
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-      const adminUser: User = { 
-        phone: 'admin', 
-        name: 'Admin',
+  // User registration with name and phone
+  const register = (name: string, phone: string) => {
+    const newUser: User = {
+      phone,
+      name,
+      isAdmin: false
+    };
+    setUser(newUser);
+    localStorage.setItem('paketshop_user', JSON.stringify(newUser));
+  };
+
+  // Admin login with password only
+  const loginAdmin = (password: string): boolean => {
+    if (password === ADMIN_PASSWORD) {
+      const adminUser: User = {
+        phone: 'admin',
+        name: 'Akramjon (Admin)',
         isAdmin: true
       };
       setUser(adminUser);
@@ -70,10 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('paketshop_user');
   };
 
-  const isAdmin = user?.isAdmin === true || user?.name === 'Admin';
+  const isAdmin = user?.isAdmin === true;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin, currentAddress, setCurrentAddress }}>
+    <AuthContext.Provider value={{ user, register, loginAdmin, logout, isAdmin, currentAddress, setCurrentAddress }}>
       {children}
     </AuthContext.Provider>
   );
