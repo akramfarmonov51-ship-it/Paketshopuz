@@ -216,18 +216,34 @@ const LiveAgent: React.FC = () => {
                 try {
                   if (fc.name === 'addToOrder') {
                     const { itemName, quantity } = fc.args as any;
-                    // Default to 1 if quantity is missing
                     const qty = quantity ? Number(quantity) : 1;
 
                     const product = findProduct(itemName);
 
                     if (product) {
-                      // USE REF to ensure we use the latest function
-                      addToCartRef.current(product, qty);
-                      result = { success: true, message: `Added ${qty} x ${product.name} to cart. Total price updated.` };
-                      console.log(`ADDED TO CART: ${product.name} x ${qty}`);
+                      // DIRECTLY update localStorage to avoid async state issues
+                      const savedCart = localStorage.getItem('paketshop_cart');
+                      const cartItems = savedCart ? JSON.parse(savedCart) : [];
+
+                      const existingIdx = cartItems.findIndex((i: any) => i.id === product.id);
+                      if (existingIdx >= 0) {
+                        cartItems[existingIdx].quantity += qty;
+                      } else {
+                        cartItems.push({ ...product, quantity: qty });
+                      }
+
+                      localStorage.setItem('paketshop_cart', JSON.stringify(cartItems));
+
+                      // Trigger storage event for CartContext to update
+                      window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'paketshop_cart',
+                        newValue: JSON.stringify(cartItems)
+                      }));
+
+                      result = { success: true, message: `Added ${qty} x ${product.name} to cart.` };
+                      console.log(`ADDED TO CART (localStorage): ${product.name} x ${qty}`);
                     } else {
-                      result = { success: false, message: `Product "${itemName}" not found in menu. Available items: ${productsRef.current.map(p => p.name).join(', ')}` };
+                      result = { success: false, message: `Product "${itemName}" not found. Available: ${productsRef.current.slice(0, 5).map(p => p.name).join(', ')}...` };
                       console.warn(`PRODUCT NOT FOUND: ${itemName}`);
                     }
                   } else if (fc.name === 'getCartStatus') {
@@ -288,8 +304,8 @@ const LiveAgent: React.FC = () => {
       <button
         onClick={active ? disconnect : connect}
         className={`w-16 h-16 md:w-20 md:h-20 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 active:scale-95 ${active
-            ? 'bg-white text-orange-600 border-4 border-orange-600 animate-pulse'
-            : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:shadow-orange-300 hover:scale-110'
+          ? 'bg-white text-orange-600 border-4 border-orange-600 animate-pulse'
+          : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:shadow-orange-300 hover:scale-110'
           }`}
       >
         {connecting ? (
