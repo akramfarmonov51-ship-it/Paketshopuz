@@ -1,0 +1,36 @@
+services:
+  # Frontend - Static Site
+  - type: web
+    name: paketshop-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://paketshop-api.onrender.com/api
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+
+  # Backend - Node.js API
+  - type: web
+    name: paketshop-api
+    runtime: node
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_CHAT_ID
+        sync: false
+      - key: WEBAPP_URL
+        value: https://paketshop-frontend.onrender.com
+    healthCheckPath: /health

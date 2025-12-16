@@ -1,0 +1,8 @@
+{
+  "name": "PaketShop.uz",
+  "description": "Qadoqlash mahsulotlari, paketlar va bir martalik idishlar onlayn do'koni. Biznesingiz uchun eng yaxshi yechimlar.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
